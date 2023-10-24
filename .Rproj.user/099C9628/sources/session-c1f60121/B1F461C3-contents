@@ -1,0 +1,40 @@
+library(dplyr) #library to make programme run
+library(sf)
+library(leaflet)
+library(htmlwidgets)
+library(RColorBrewer)
+library(htmltools)
+library(formattable)
+library(readxl)
+library(ggplot2)
+library(ggpubr)
+library(viridisLite)
+library(viridis)
+library(gganimate)
+library(gifski)
+library(readr)
+setwd("C:\\Users\\nikla\\programming_projects\\R\\RoadAccidents")
+
+data <- read_csv("RoadAccidents.csv")
+data <- type.convert(data)
+
+MAINdata <- data %>% filter(FeatureName == "Scotland")
+#killed all
+{
+  Killeddata <- MAINdata %>% filter(Outcome == "Killed")
+  Killeddata <- Killeddata[order(Killeddata$DateCode,decreasing = FALSE)]
+  Killeddata %>%
+    #tail(10) %>%
+    ggplot( aes(x=DateCode, y=Value)) +
+    geom_line() +
+    geom_point()
+}
+#strat for seriously injure or death
+{
+  strata <- MAINdata %>%filter(Outcome != "Killed" | Gender == "All")
+  strata %>%
+    #tail(10) %>%
+    ggplot( aes(x=DateCode, y=Value)) +
+    geom_line() +
+    geom_point()
+}

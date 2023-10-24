@@ -1,0 +1,61 @@
+library(httr)
+library(rvest)
+#browseURL("https://www.pornhub.com")
+{
+  # Get the HTML document from Wikipedia using httr
+  Pornhub_response <- GET('https://www.pornhub.com/')
+  # Parse the response into an HTML doc
+  Pornhub_page <- content(Pornhub_response)
+  }
+
+{
+# Install and load RSelenium
+  library(RSelenium)
+  
+  # Start a Selenium server (this will automatically launch a web browser)
+  rD <- rsDriver(browser="firefox")
+  remDr <- rD[["client"]]
+  
+  # Navigate to the webpage
+  remDr$navigate("https://www.pornhub.com/")  # Replace with the URL of the website
+  
+  # Find the button element (using CSS selector as an example)
+  button_element <- remDr$findElement(using = "css", value = "div.button-class")
+  
+  # Click the button
+  button_element$clickElement()
+  
+  # Wait for the page to load (you might need to add a delay here)
+  Sys.sleep(5)  # Wait for 5 seconds, adjust as needed
+  
+  # Retrieve the updated page's HTML content
+  updated_page_source <- remDr$getPageSource()[[1]]
+  
+  # Parse the updated page's HTML using rvest
+  parsed_page <- read_html(updated_page_source)
+  
+  # Now, use rvest functions to extract the desired information from 'parsed_page'
+  # For example, using `html_nodes()` and `html_text()` functions to find specific elements and extract text.
+  
+  # Example:
+  # info <- parsed_page %>%
+  #   html_nodes("div.result-info") %>%
+  #   html_text()
+  
+  # Print or store the extracted information
+  # print(info)
+  
+  # Close the browser and stop the Selenium server
+  remDr$close()
+  driver$server$stop()
+  
+}
+# Get the HTML document from Wikipedia using httr
+wikipedia_response <- GET('https://en.wikipedia.org/wiki/Varigotti')
+# Parse the response into an HTML doc
+wikipedia_page <- content(wikipedia_response)
+
+# Extract the elevation with XPATH
+wikipedia_page %>% 
+  html_elements(xpath = '//table//tr[position() = 9]/td') %>% 
+  html_text()
