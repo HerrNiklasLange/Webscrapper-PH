@@ -402,6 +402,7 @@ top1weeklyWorld <- function(){
     }
   )
 }
+
 while (TRUE){
   x <- substr(x = Sys.time(), start = 12, stop = 16)
   if (x == "09:30"){
