@@ -22,16 +22,16 @@ Top5PerCountryLastDays <- function(WhatCountry){
   dfWebScrapper <- data.frame(PHWdt)
   #Visualizsation of scotland map with last data sets
   dfWebScrapper <- dfWebScrapper %>% filter(position < 6) %>% filter(mostViewed == "today") %>% filter(countryID == WhatCountry)
-  len = 30
+  len = 50
 
   dfWebScrapper <- dfWebScrapper[1:len,]
   for(i in 1:len){
       if(dfWebScrapper[i,11] == "AM"){
-        dfWebScrapper[i,1] = paste(dfWebScrapper[i,1], " AM")
+        dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 9, stop = 10), " AM")
         
       }
       else if (dfWebScrapper[i,11] == "PM"){
-        dfWebScrapper[i,1] = paste(dfWebScrapper[i,1], " PM")
+        dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 9, stop = 10), " PM")
       }
   }
  
@@ -45,7 +45,7 @@ Top5PerCountryLastDays <- function(WhatCountry){
         ylim("1","2","3","4","5") +
         ggtitle("Top 5 videos most viewed videos per week for the last 7 days") +
         scale_y_reverse()#,"6","7","8","9","10 
-      tempStore = paste(WhatCountry,"dailytop5Last7Days.jpeg")
+      tempStore = paste(WhatCountry,"dailytop5Last7Days.jpeg",sep = "-")
       plt + ggsave(filename = file.path("/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main/daily",tempStore),width = 1000,
                    height = 500, units = "px", scale = 5)
     },
