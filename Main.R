@@ -25,13 +25,25 @@ LoadingPH <- function(){
                  port = free_port())
   #remDr <- rD[["client"]]
   assign("remDr", rD[["client"]], envir = .GlobalEnv)
-  
-  # Loading PH
+   
+  # Loading PH test <- identical(Title, character(0))
   remDr$navigate("https://www.pornhub.com")
-  #Going past the 18+ btn
+  #Going past the 18+ btn             #
   Sys.sleep(10)                      #/html/body/div[8]/div/div/button
-  button_element <- remDr$findElement(using = "xpath","/html/body/div[8]/div/div/button")
-  button_element$clickElement()
+  
+  
+  tryCatch(
+    {
+      button_element <- remDr$findElement(using = "xpath","/html/body/div[8]/div/div/button")
+      button_element$clickElement()
+    },
+    error=function(error_message) {
+      
+      button_element <- remDr$findElement(using = "xpath","/html/body/div[4]/div/div/button")
+      button_element$clickElement()
+      return(NA)
+    }
+  )
   #accepting cookie settings
   Sys.sleep(3)
   button_element <- remDr$findElement(using = "css",".cbSecondaryCTA")
@@ -41,6 +53,7 @@ LoadingPH <- function(){
   countryID <- c("ar","au","at","be","br","bg","ca","cl","hr","cz","dk","eg","fi","fr","de","gr","hu","in","ie","il","it","jp","kr","mx","ma","nl","nz","no","pk","pl","pt","ro","ru","rs","sk","es","se","ch","gb","ua","us","world")
   #if doing test runs then true if not false
   testRun <- FALSE
+  
   #loop that reads in the data
   for (i in 1:length(countryID)){
     ID <- countryID[i]

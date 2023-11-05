@@ -22,7 +22,7 @@ Top5PerCountryLastDays <- function(WhatCountry){
   dfWebScrapper <- data.frame(PHWdt)
   #Visualizsation of scotland map with last data sets
   dfWebScrapper <- dfWebScrapper %>% filter(position < 6) %>% filter(mostViewed == "today") %>% filter(countryID == WhatCountry)
-  len = 50
+  len = 70
 
   dfWebScrapper <- dfWebScrapper[1:len,]
   for(i in 1:len){
