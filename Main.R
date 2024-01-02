@@ -12,6 +12,8 @@ LoadingPH <- function(){
   library(netstat)
   library(httr)
   library(rvest)
+  library(openxlsx)
+  library(readxl)
   
   #loading selium and preparing servers dfWebSCrapper[[1,2]]
   selenium()
@@ -49,7 +51,7 @@ LoadingPH <- function(){
   button_element <- remDr$findElement(using = "css",".cbSecondaryCTA")
   button_element$clickElement()
   
-  #List of country ID
+  #List of country ID   
   countryID <- c("ar","au","at","be","br","bg","ca","cl","hr","cz","dk","eg","fi","fr","de","gr","hu","in","ie","il","it","jp","kr","mx","ma","nl","nz","no","pk","pl","pt","ro","ru","rs","sk","es","se","ch","gb","ua","us","world")
   #if doing test runs then true if not false
   testRun <- FALSE
@@ -58,7 +60,7 @@ LoadingPH <- function(){
   for (i in 1:length(countryID)){
     ID <- countryID[i]
     #rnd bewtween 30s and 60s so we don't spam full the server of PH
-    j <- runif(n=1, min=20, max=40)
+    
     Sys.sleep(j)
     ReadingCountryToday(ID) # Reading most viewed today of country
     ReadingCountryWeekly(ID) #Reading most viewed this week of country
@@ -76,19 +78,27 @@ LoadingPH <- function(){
       ReadingCountryAllTime(ID)
     }
     print(paste("Loop number", i, "done"))
+    j <- runif(n=1, min=25, max=45)
   }
   #closing the server
   
   
   remDr$close()
   rD[["server"]]$stop()
+  
+  #Back up
+  
+  
+  data <- read_excel("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/phwMaindt.xlsx")#C:\Users\nikla\OneDrive\Desktop\PHW\PWS\PWS\data\phwMaindt.xlsx
+  write.xlsx(data, paste("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/DailyBackUp/backup",Sys.Date(),AM_PM,".xlsx",sep = ""))
+  
 }
 Readinghtml <- function(mostviewed, ID, updated_page_source){
   dfWebScrapper <- data.frame(date=c(rep.int(Sys.Date(), 30)), title = "NA", views = "NA",likeRatio = "NA", duration = "NA", URL = "NA",featuredOn = "NA", countryID = "NA", mostViewed="NA", position=-1, MorningOrEvening = AM_PM)
   
   for (i in 1:30) {
     x <- i + 1
-    print(i)
+    #print(i)
     #title
     {
       parsed_page <- read_html(updated_page_source)# #v439344751 > div:nth-child(1) > div:nth-child(3) > span:nth-child(1) > a:nth-child(1)
@@ -102,7 +112,7 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
         html_text()
       Title <- gsub("  ", "", Title)
       Title <- gsub("\n", "", Title)
-      print(Title)
+      #print(Title)
       test <- identical(Title, character(0))
       if (test){
         title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[3]/span/a")
@@ -125,7 +135,7 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
         html_text()
       views <- gsub("  ", "", views)
       views <- gsub("\n", "", views)
-      print(views)
+      #print(views)
       if (test){
         title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[3]/div[2]/div/span/var")
         title_xpath <- gsub(" ", "", title_xpath)
@@ -147,7 +157,7 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
         html_text()
       likeRatio <- gsub("  ", "", likeRatio)
       likeRatio <- gsub("\n", "", likeRatio)
-      print(likeRatio)
+      #print(likeRatio)
       if (test){
         title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[3]/div[2]/div/div/div")
         title_xpath <- gsub(" ", "", title_xpath)
@@ -169,7 +179,7 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
         html_text()
       duration <- gsub("  ", "", duration)
       duration <- gsub("\n", "", duration)
-      print(duration)
+      #print(duration)
       if (test){
         title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[1]/a/div/var")
         title_xpath <- gsub(" ", "", title_xpath)
@@ -191,7 +201,7 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
         html_attr('href')
       URL <- gsub("/", "https://www.pornhub.com/", URL)
       URL <- gsub(" ", "", URL)
-      print(url)
+      #print(url)
       if (test){
         title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[3]/span/a")
         title_xpath <- gsub(" ", "", title_xpath)
@@ -213,7 +223,7 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
         html_text()
       featuredOn <- gsub("  ", "", featuredOn)
       featuredOn <- gsub("\n", "", featuredOn)
-      print(featuredOn)
+      #print(featuredOn)
       if (test){
         title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/div")
         title_xpath <- gsub(" ", "", title_xpath)
@@ -233,7 +243,7 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
       dfWebScrapper[[i,11]] <- AM_PM
     }
   }
-  print(dfWebScrapper)
+  #print(dfWebScrapper)
   WritingToExcel(dfWebScrapper)
 }
 ReadingCountryToday <- function(ID){
@@ -280,7 +290,7 @@ ReadingCountryMonthly <- function(ID){
   updated_page_source <- remDr$getPageSource()[[1]]
   
   #reading the data,
-  Readinghtml("weekly", ID, updated_page_source)
+  Readinghtml("monthly", ID, updated_page_source)
   print("Monthly Done")
 }
 ReadingCountryYearly <- function(ID){
@@ -317,8 +327,7 @@ ReadingCountryAllTime <- function(ID){
   print("All time done")
 }
 WritingToExcel <- function(dfWebScrapper){
-  library(openxlsx)
-  library(readxl)
+ 
   data <- read_excel("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/phwMaindt.xlsx")#C:\Users\nikla\OneDrive\Desktop\PHW\PWS\PWS\data\phwMaindt.xlsx
   dfWebScrapper <- rbind(dfWebScrapper, data)
   write.xlsx(dfWebScrapper, "/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/phwMaindt.xlsx")
@@ -341,13 +350,12 @@ LIB <- function(){
   library(stringr)
   library(contactdata)
   library(ggplot2)
+  library(openxlsx)
+  library(readxl)
 }
-top1TodayWorld <- function(){
-  PHWdt <- read_excel("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/phwMaindt.xlsx")
-  PHWdt[1] <- sapply(PHWdt[1], as.character)
-  dfWebScrapper <- data.frame(PHWdt)
+top1TodayWorld <- function(dfWebScrapper){
   #Visualizsation of scotland map with last data sets
-  dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "today") %>% filter(date == Sys.Date()) %>% filter(countryID != "world")
+  dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "today") %>% filter(countryID != "world")
   dfWebScrapper <- dfWebScrapper[1:41,]
   country <- c("USA","Ukraine","UK","Switzerland","Sweden","Spain","Slovakia","Serbia","Russia","Romania","Portugal","Poland","Pakistan","Norway", "New Zealand","Netherlands","Morocco","Mexico","South Korea","Japan","Italy","Israel","Ireland","India","Hungary","Greece","Germany","France","Finland","Egypt","Denmark","Czech Republic","Croatia","Chile","Canada","Bulgaria","Brazil","Belgium","Austria","Australia","Argentina")
   dfWebScrapper<- cbind.data.frame(dfWebScrapper, country)
@@ -360,32 +368,28 @@ top1TodayWorld <- function(){
     {
     plt <- ggplot(combined, aes(x = long, y = lat, group = group)) +
       geom_polygon(aes(fill = title)) +
-      ggtitle("Top viewed video today per country on the ",  PHWdt$date[1]) +
+      ggtitle("The most viewed videos per country of the category DAY on the ",  PHWdt$date[1]) +
       theme(axis.title.x=element_blank(),
             axis.text.x=element_blank(),
             axis.ticks.x=element_blank(),
             axis.title.y=element_blank(),
             axis.text.y=element_blank(),
             axis.ticks.y=element_blank())
-      plt + ggsave(filename = file.path("/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main","dailyWorldMap.jpeg"),width = 1000,
-                              height = 500, units = "px", scale = 5)
+       ggsave(filename = file.path("/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main","dailyWorldMap.jpeg"),
+              plot = plt,
+              width = 1000,
+              height = 500, units = "px", scale = 5)
     },
     error=function(error_message) {
-      message("This is my custom message.")
-      message("And below is the error message from R:")
-      message(error_message)
       return(NA)
     }
   )
 }
-top1weeklyWorld <- function(){
-  PHWdt <- read_excel("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/phwMaindt.xlsx")
-  PHWdt[1] <- sapply(PHWdt[1], as.character)
-  dfWebScrapper <- data.frame(PHWdt)
+top1weeklyWorld <- function(dfWebScrapper){
   country <- c("USA","Ukraine","UK","Switzerland","Sweden","Spain","Slovakia","Serbia","Russia","Romania","Portugal","Poland","Pakistan","Norway", "New Zealand","Netherlands","Morocco","Mexico","South Korea","Japan","Italy","Israel","Ireland","India","Hungary","Greece","Germany","France","Finland","Egypt","Denmark","Czech Republic","Croatia","Chile","Canada","Bulgaria","Brazil","Belgium","Austria","Australia","Argentina")
   
   #Visualizsation of scotland map with last data sets
-  dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "weekly") %>% filter(date == Sys.Date()) %>% filter(countryID != "world")
+  dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "weekly") %>% filter(countryID != "world")
   dfWebScrapper <- dfWebScrapper[1:41,]
   dfWebScrapper<- cbind.data.frame(dfWebScrapper, country)
   dfWebScrapper <- dfWebScrapper %>% select(country, title)
@@ -395,91 +399,257 @@ top1weeklyWorld <- function(){
   title_fill <- geom_polygon(aes(fill = title))
   tryCatch(
     {
-    ggplot(combined, aes(x = long, y = lat, group = group)) +
-      geom_polygon(aes(fill = title)) +
-      ggtitle("Top viewed video this week per country on the",  PHWdt$date[1]) +
-      theme(axis.title.x=element_blank(),
-            axis.text.x=element_blank(),
-            axis.ticks.x=element_blank(),
-            axis.title.y=element_blank(),
-            axis.text.y=element_blank(),
-            axis.ticks.y=element_blank()) +
-      ggsave(filename = file.path("/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main","weeklyWorldMap.jpeg"),width = 1000,
-             height = 500, units = "px", scale = 5)
+      plt <- ggplot(combined, aes(x = long, y = lat, group = group, fill = title)) +
+        geom_polygon() +
+        ggtitle(paste("The most viewed videos per country of the category WEEK on the", PHWdt$date[1])) +
+        theme(
+          axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank()
+        )
+        #scale_fill_manual(values = title ) +
+        ggsave(
+          filename = file.path("/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main", "weeklyWorldMap.jpeg"),
+          plot = plt,
+          width = 1000,
+          height = 500,
+          units = "px",
+          scale = 5
+        )
     },
     error=function(error_message) {
-      message("This is my custom message.")
-      message("And below is the error message from R:")
-      message(error_message)
+      
       return(NA)
     }
   )
 }
-Top5PerCountryLastDays <- function(WhatCountry){
+top1monthlyWorld <- function(dfWebScrapper){
+  
+  country <- c("USA","Ukraine","UK","Switzerland","Sweden","Spain","Slovakia","Serbia","Russia","Romania","Portugal","Poland","Pakistan","Norway", "New Zealand","Netherlands","Morocco","Mexico","South Korea","Japan","Italy","Israel","Ireland","India","Hungary","Greece","Germany","France","Finland","Egypt","Denmark","Czech Republic","Croatia","Chile","Canada","Bulgaria","Brazil","Belgium","Austria","Australia","Argentina")
+  
+  #Visualizsation of scotland map with last data sets
+  dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "monthly") %>% filter(countryID != "world")
+  dfWebScrapper <- dfWebScrapper[1:41,]
+  dfWebScrapper<- cbind.data.frame(dfWebScrapper, country)
+  dfWebScrapper <- dfWebScrapper %>% select(country, title)
+  world <- map_data("world")
+  combined <- left_join(world, dfWebScrapper, by = c("region" = "country"))
+  title_fill <- geom_polygon(aes(fill = title))
+  tryCatch(
+    {
+      plt <- ggplot(combined, aes(x = long, y = lat, group = group, fill = title)) +
+        geom_polygon() +
+        ggtitle(paste("The most viewed videos per country of the category MONTH on the", PHWdt$date[1])) +
+        theme(
+          axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank()
+        )
+      #scale_fill_manual(values = title ) +
+      ggsave(
+        filename = file.path("/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main", "monthlyWorldMap.jpeg"),
+        plot = plt,
+        width = 1000,
+        height = 500,
+        units = "px",
+        scale = 5
+      )
+    },
+    error=function(error_message) {
+      
+      return(NA)
+    }
+  )
+}
+top1yearWorld <- function(dfWebScrapper){
+  
+  country <- c("USA","Ukraine","UK","Switzerland","Sweden","Spain","Slovakia","Serbia","Russia","Romania","Portugal","Poland","Pakistan","Norway", "New Zealand","Netherlands","Morocco","Mexico","South Korea","Japan","Italy","Israel","Ireland","India","Hungary","Greece","Germany","France","Finland","Egypt","Denmark","Czech Republic","Croatia","Chile","Canada","Bulgaria","Brazil","Belgium","Austria","Australia","Argentina")
+  
+  #Visualizsation of scotland map with last data sets
+  dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "yearly") %>% filter(countryID != "world")
+  dfWebScrapper <- dfWebScrapper[1:41,]
+  dfWebScrapper<- cbind.data.frame(dfWebScrapper, country)
+  dfWebScrapper <- dfWebScrapper %>% select(country, title)
+  world <- map_data("world")
+  combined <- left_join(world, dfWebScrapper, by = c("region" = "country"))
+  title_fill <- geom_polygon(aes(fill = title))
+  for(i in 1:length(dfWebScrapper$title)){
+    original_title <- dfWebScrapper$title
+    
+    # Set the maximum number of characters per line
+    max_chars_per_line <- 20
+    
+    # Wrap the title to a specified width
+    wrapped_title <- strwrap(original_title, width = max_chars_per_line, simplify = FALSE)
+    
+    # If the title is longer than the specified width, join the lines with "\n"
+    if (length(wrapped_title) > 1) {
+      new_title <- paste(wrapped_title, collapse = "\n")
+    } else {
+      new_title <- original_title
+    }
+    
+    # Print the original and new titles
+    cat("Original Title:\n", original_title, "\n\n")
+    cat("New Title:\n", new_title, "\n")
+  }
+  tryCatch(
+    {
+      plt <- ggplot(combined, aes(x = long, y = lat, group = group, fill = title)) +
+        geom_polygon() +
+        ggtitle(paste("The most viewed videos per country of the category Year on the", PHWdt$date[1])) +
+        theme(
+          axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          legend.box = "vertical",
+          plot.margin = margin(0.1, 0.1, 0.1, 0.1, "cm"))
+      
+        #theme(legend.key.size = unit(0.5, 'cm'), #change legend key size
+         #     legend.key.height = unit(0.5, 'cm'), #change legend key height
+          #    legend.key.width = unit(0.3, 'cm'), #change legend key width
+           #   legend.title = element_text(size=14), #change legend title font size
+            #  legend. = element_text(size=8)) #change legend text font size
+      
+      #scale_fill_manual(values = title ) +
+      ggsave(
+        filename = file.path("/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main", "yearlyWorldMap.jpeg"),
+        plot = plt,
+        width = 1000,
+        height = 500,
+        units = "px",
+        scale = 5
+      )
+    },
+    error=function(error_message) {
+      
+      return(NA)
+    }
+  )
+}
+Top5PerCountryLastDays <- function(WhatCountry,dfWebScrapper){
+  
+
+  #Visualizsation of scotland map with last data sets
+  dfWebScrapper <- dfWebScrapper %>% filter(position < 6) %>% filter(mostViewed == "today") %>% filter(countryID == WhatCountry)
+  
+  Top5GeomLinePlot(dfWebScrapper, WhatCountry, "Days")
+}
+Top5PerCountryLastWeek <- function(WhatCountry,dfWebScrapper){
+
+  #Visualizsation of scotland map with last data sets
+  dfWebScrapper <- dfWebScrapper %>% filter(position < 6) %>% filter(mostViewed == "weekly") %>% filter(countryID == WhatCountry)
+  len = 40
+  
+  Top5GeomLinePlot(dfWebScrapper, WhatCountry, "Week")
+}
+Top5PerCountryLastMonth <- function(WhatCountry,dfWebScrapper){
+
+  #Visualizsation of scotland map with last data sets
+  dfWebScrapper <- dfWebScrapper %>% filter(position < 6) %>% filter(mostViewed == "monthly") %>% filter(countryID == WhatCountry)
+  len = 40
+  
+  Top5GeomLinePlot(dfWebScrapper, WhatCountry, "Month")
+}
+Top5PerCountryLastYear <- function(WhatCountry,dfWebScrapper){
+
+  #Visualizsation of scotland map with last data sets
+  dfWebScrapper <- dfWebScrapper %>% filter(position < 6) %>% filter(mostViewed == "yearly") %>% filter(countryID == WhatCountry)
+  len = 40
+  
+  Top5GeomLinePlot(dfWebScrapper, WhatCountry, "Year")
+}
+Top5GeomLinePlot <- function(dfWebScrapper, WhatCountry,type){
+  len = 40
+  dfWebScrapper <- dfWebScrapper%>% slice(1:len)
+  for(i in 1:len){
+    if(!is.na(dfWebScrapper[i, 11]) &&dfWebScrapper[i,11] == "AM"){
+      dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 6, stop = 10), " AM")
+      
+    } else if (!is.na(dfWebScrapper[i, 11]) &&dfWebScrapper[i,11] == "PM"){
+      dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 6, stop = 10), " PM")
+    }
+  }
+  #dfWebScrapper <- dfWebScrapper[order(dfWebScrapper$date, decreasing = FALSE), ]
+  if(type == "Days"){
+    GraphTitle <- paste("Top 5 videos most viewed videos of the category DAY for the last 3 days for country with ID", WhatCountry)
+  } else if(type == "Week"){
+    GraphTitle <- paste("Top 5 videos most viewed videos of the category WEEK for the last 3 days for country with ID", WhatCountry)
+  } else if(type == "Month"){
+    GraphTitle <- paste("Top 5 videos most viewed videos of the category MONTH for the last 3 days for country with ID", WhatCountry)
+  } else{
+    GraphTitle <- paste("Top 5 videos most viewed videos of the category YEAR for the last 3 days for country with ID", WhatCountry)
+  }
+  tryCatch({
+      plt <- ggplot(dfWebScrapper, aes(x = date, y = position, group = title)) +
+      #geom_path() +
+      geom_path(aes(colour = title)) +
+      geom_point(aes(colour = title)) +
+      #ylim("1","2","3","4","5") +
+      ggtitle(GraphTitle) +
+      scale_y_reverse()#,"6","7","8","9","10 
+      tempStore = paste(WhatCountry,"-dailytop5Last7",type,".jpeg",sep = "")
+      ggsave(filename = file.path('/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main/daily/',tempStore),
+             plot = plt,
+             width = 1000,
+             height = 500, units = "px", scale = 5)
+  },error = function(e){
+    cat("THIS IS THE BIG ERROR:", conditionMessage(e), "\n")
+    Sys.sleep(60)})
+}
+Visualisation <-function() {
+  LIB() #
   PHWdt <- read_excel("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/phwMaindt.xlsx")
   PHWdt[1] <- sapply(PHWdt[1], as.character)
   dfWebScrapper <- data.frame(PHWdt)
-  #Visualizsation of scotland map with last data sets
-  dfWebScrapper <- dfWebScrapper %>% filter(position < 6) %>% filter(mostViewed == "today") %>% filter(countryID == WhatCountry)
-  len = 70
-  
-  dfWebScrapper <- dfWebScrapper[1:len,]
-  for(i in 1:len){
-    if(dfWebScrapper[i,11] == "AM"){
-      dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 9, stop = 10), " AM")
-      
-    }
-    else if (dfWebScrapper[i,11] == "PM"){
-      dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 9, stop = 10), " PM")
-    }
-  }
-  
-  
-  tryCatch(
-    {
-      plt <-  ggplot(dfWebScrapper, aes(x = date, y = position, group = title)) +
-        #geom_line() +
-        geom_path(aes(colour = title)) +
-        geom_point(aes(colour = title)) +
-        ylim("1","2","3","4","5") +
-        ggtitle("Top 5 videos most viewed videos per week for the last 7 days") +
-        scale_y_reverse()#,"6","7","8","9","10 
-      tempStore = paste(WhatCountry,"dailytop5Last7Days.jpeg",sep = "-")
-      plt + ggsave(filename = file.path("/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main/daily",tempStore),width = 1000,
-                   height = 500, units = "px", scale = 5)
-    },
-    error=function(error_message) {
-      message("This is my custom message.")
-      message("And below is the error message from R:")
-      message(error_message)
-      return(NA)
-    }
-  )
-}
-Visualisation <-function() {
-  LIB()
   countryID <- c("ar","au","at","be","br","bg","ca","cl","hr","cz","dk","eg","fi","fr","de","gr","hu","in","ie","il","it","jp","kr","mx","ma","nl","nz","no","pk","pl","pt","ro","ru","rs","sk","es","se","ch","gb","ua","us","world")
-  top1weeklyWorld()
-  top1TodayWorld()
+  top1weeklyWorld(dfWebScrapper)
+  top1TodayWorld(dfWebScrapper)
+  top1monthlyWorld(dfWebScrapper)
+  top1yearWorld(dfWebScrapper)
+  tryCatch({
   for (i in 1:length(countryID)){
-    Top5PerCountryLastDays(countryID[i])
+    if(countryID[i] %in% c("ma", "aeg")){
+     
+    }
+    else{
+      print(paste("Today", countryID[i]))
+      Top5PerCountryLastDays(countryID[i],dfWebScrapper)
+      print(paste("Week", countryID[i]))
+      Top5PerCountryLastMonth(countryID[i],dfWebScrapper)
+      Top5PerCountryLastWeek(countryID[i],dfWebScrapper)
+      print(paste("Year", countryID[i]))
+      Top5PerCountryLastYear(countryID[i],dfWebScrapper)
   }
+  }}, error = function(e){
+    cat("THIS IS THE BIG ERROR:", conditionMessage(e), "\n")
+    Sys.sleep(60)
+  }
+  )
+  
 }
-
 #infinity run
 while (TRUE){
   x <- substr(x = Sys.time(), start = 12, stop = 16)
-  if (x == "09:30"){
+  if (x == "08:30"){
     AM_PM = "AM"
     LoadingPH()
     Visualisation()
     print(Sys.time())
   }
-  else if (x == "21:30"){
+  else if (x == "20:30"){
     AM_PM = "PM"
     LoadingPH()
     Visualisation()
     print(Sys.time())
   }
-  
 }
