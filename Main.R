@@ -363,12 +363,12 @@ top1TodayWorld <- function(dfWebScrapper){
   dfWebScrapper <- dfWebScrapper %>% select(country, title)
   world <- map_data("world")
   combined <- left_join(world, dfWebScrapper, by = c("region" = "country"))
-  
+  dfWebScrapper <- arrange(dfWebScrapper, date)
   tryCatch(
     {
     plt <- ggplot(combined, aes(x = long, y = lat, group = group)) +
       geom_polygon(aes(fill = title)) +
-      ggtitle("The most viewed videos per country of the category DAY on the ",  PHWdt$date[1]) +
+      ggtitle(paste("The most viewed videos per country of the category DAY on the ",  dfWebScrapper$date[1])) +
       theme(axis.title.x=element_blank(),
             axis.text.x=element_blank(),
             axis.ticks.x=element_blank(),
@@ -397,11 +397,12 @@ top1weeklyWorld <- function(dfWebScrapper){
   #world %>% filter(region != "Antarctica") 
   combined <- left_join(world, dfWebScrapper, by = c("region" = "country"))
   title_fill <- geom_polygon(aes(fill = title))
+  dfWebScrapper <- arrange(dfWebScrapper, date)
   tryCatch(
     {
       plt <- ggplot(combined, aes(x = long, y = lat, group = group, fill = title)) +
         geom_polygon() +
-        ggtitle(paste("The most viewed videos per country of the category WEEK on the", PHWdt$date[1])) +
+        ggtitle(paste("The most viewed videos per country of the category WEEK on the", dfWebScrapper$date[1])) +
         theme(
           axis.title.x = element_blank(),
           axis.text.x = element_blank(),
@@ -438,11 +439,12 @@ top1monthlyWorld <- function(dfWebScrapper){
   world <- map_data("world")
   combined <- left_join(world, dfWebScrapper, by = c("region" = "country"))
   title_fill <- geom_polygon(aes(fill = title))
+  dfWebScrapper <- arrange(dfWebScrapper, date)
   tryCatch(
     {
       plt <- ggplot(combined, aes(x = long, y = lat, group = group, fill = title)) +
         geom_polygon() +
-        ggtitle(paste("The most viewed videos per country of the category MONTH on the", PHWdt$date[1])) +
+        ggtitle(paste("The most viewed videos per country of the category MONTH on the", dfWebScrapper$date[1])) +
         theme(
           axis.title.x = element_blank(),
           axis.text.x = element_blank(),
@@ -479,6 +481,7 @@ top1yearWorld <- function(dfWebScrapper){
   world <- map_data("world")
   combined <- left_join(world, dfWebScrapper, by = c("region" = "country"))
   title_fill <- geom_polygon(aes(fill = title))
+  dfWebScrapper <- arrange(dfWebScrapper, date)
   for(i in 1:length(dfWebScrapper$title)){
     original_title <- dfWebScrapper$title
     
@@ -503,7 +506,7 @@ top1yearWorld <- function(dfWebScrapper){
     {
       plt <- ggplot(combined, aes(x = long, y = lat, group = group, fill = title)) +
         geom_polygon() +
-        ggtitle(paste("The most viewed videos per country of the category Year on the", PHWdt$date[1])) +
+        ggtitle(paste("The most viewed videos per country of the category Year on the", dfWebScrapper$date[1])) +
         theme(
           axis.title.x = element_blank(),
           axis.text.x = element_blank(),
@@ -565,7 +568,6 @@ Top5PerCountryLastYear <- function(WhatCountry,dfWebScrapper){
   #Visualizsation of scotland map with last data sets
   dfWebScrapper <- dfWebScrapper %>% filter(position < 6) %>% filter(mostViewed == "yearly") %>% filter(countryID == WhatCountry)
   len = 40
-  
   Top5GeomLinePlot(dfWebScrapper, WhatCountry, "Year")
 }
 Top5GeomLinePlot <- function(dfWebScrapper, WhatCountry,type){
@@ -573,12 +575,13 @@ Top5GeomLinePlot <- function(dfWebScrapper, WhatCountry,type){
   dfWebScrapper <- dfWebScrapper%>% slice(1:len)
   for(i in 1:len){
     if(!is.na(dfWebScrapper[i, 11]) &&dfWebScrapper[i,11] == "AM"){
-      dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 6, stop = 10), " AM")
+      dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 1, stop = 10), " AM")
       
     } else if (!is.na(dfWebScrapper[i, 11]) &&dfWebScrapper[i,11] == "PM"){
-      dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 6, stop = 10), " PM")
+      dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 1, stop = 10), " PM")
     }
   }
+  dfWebScrapper <- arrange(dfWebScrapper, date)
   #dfWebScrapper <- dfWebScrapper[order(dfWebScrapper$date, decreasing = FALSE), ]
   if(type == "Days"){
     GraphTitle <- paste("Top 5 videos most viewed videos of the category DAY for the last 3 days for country with ID", WhatCountry)
@@ -652,4 +655,40 @@ while (TRUE){
     Visualisation()
     print(Sys.time())
   }
+}
+
+resetData <-function(){
+  library(RSelenium)
+  library(wdman)
+  library(netstat)
+  library(httr)
+  library(rvest)
+  library(openxlsx)
+  library(readxl)
+  
+  PHWdt <- read_excel("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/phwMaindt.xlsx")
+  PHWdt[1] <- sapply(PHWdt[1], as.character)
+  dfWebScrapper <- data.frame(PHWdt)
+  newDT <- data.frame(date, title = "NA", views = "NA",likeRatio = "NA", duration = "NA", URL = "NA",featuredOn = "NA", countryID = "NA", mostViewed="NA", position=-1, MorningOrEvening = AM_PM)
+  type <- dfWebScrapper %>% distinct(mostViewed)
+  ID <- c("ar","au","at","be","br","bg","ca","cl","hr","cz","dk","eg","fi","fr","de","gr","hu","in","ie","il","it","jp","kr","mx","ma","nl","nz","no","pk","pl","pt","ro","ru","rs","sk","es","se","ch","gb","ua","us","world")
+  uniqueDates <- dfWebScrapper %>% distinct(date)
+  for(i in 1:nrow(uniqueDates)){
+    #print("We get here")
+    for(j in 1:length(ID)){
+      for(k in 1:nrow(type)){
+        dfWebScrapper <- data.frame(PHWdt)
+        dfWebScrapper <- dfWebScrapper %>% filter(mostViewed == type[k,1]) %>% filter(countryID == ID[j])%>% filter(date == uniqueDates[i, 1])
+        if(count(dfWebScrapper %>% filter(position == 1) %>% filter(MorningOrEvening == "AM")) > 1){
+          #print("True")
+          for(x in 1:30){
+            dfWebScrapper$MorningOrEvening[x] <- "PM"
+          }
+        }
+        newDT <- rbind(dfWebScrapper, newDT)
+      }
+    }
+  }
+  write.xlsx(newDT, "/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/phwMaindt.xlsx")
+  print("DONE")
 }
