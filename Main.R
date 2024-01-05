@@ -55,7 +55,7 @@ LoadingPH <- function(){
   countryID <- c("ar","au","at","be","br","bg","ca","cl","hr","cz","dk","eg","fi","fr","de","gr","hu","in","ie","il","it","jp","kr","mx","ma","nl","nz","no","pk","pl","pt","ro","ru","rs","sk","es","se","ch","gb","ua","us","world")
   #if doing test runs then true if not false
   testRun <- FALSE
-  
+  date = "01"
   #loop that reads in the data
   for (i in 1:length(countryID)){
     ID <- countryID[i]
@@ -73,7 +73,7 @@ LoadingPH <- function(){
       #reading most viewed of the country on Yearly on every Sunday
       ReadingCountryYearly(ID)
     }
-    if (testRun  | date == "01"){
+    if (TRUE  | substr(x = Sys.Date(), start = 9, stop = 10) == "01"){
       #reading country most viewed of all time at the beginning of the month 
       ReadingCountryAllTime(ID)
     }
@@ -357,6 +357,7 @@ top1TodayWorld <- function(dfWebScrapper){
   #Visualizsation of scotland map with last data sets
   dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "today") %>% filter(countryID != "world")
   dfWebScrapper <- dfWebScrapper[1:41,]
+  webscrapDate <- dfWebScrapper$date[1]
   country <- c("USA","Ukraine","UK","Switzerland","Sweden","Spain","Slovakia","Serbia","Russia","Romania","Portugal","Poland","Pakistan","Norway", "New Zealand","Netherlands","Morocco","Mexico","South Korea","Japan","Italy","Israel","Ireland","India","Hungary","Greece","Germany","France","Finland","Egypt","Denmark","Czech Republic","Croatia","Chile","Canada","Bulgaria","Brazil","Belgium","Austria","Australia","Argentina")
   dfWebScrapper<- cbind.data.frame(dfWebScrapper, country)
   
@@ -368,7 +369,7 @@ top1TodayWorld <- function(dfWebScrapper){
     {
     plt <- ggplot(combined, aes(x = long, y = lat, group = group)) +
       geom_polygon(aes(fill = title)) +
-      ggtitle(paste("The most viewed videos per country of the category DAY on the ",  dfWebScrapper$date[1])) +
+      ggtitle(paste("The most viewed videos per country of the category DAY on the ",  webscrapDate)) +
       theme(axis.title.x=element_blank(),
             axis.text.x=element_blank(),
             axis.ticks.x=element_blank(),
@@ -391,6 +392,7 @@ top1weeklyWorld <- function(dfWebScrapper){
   #Visualizsation of scotland map with last data sets
   dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "weekly") %>% filter(countryID != "world")
   dfWebScrapper <- dfWebScrapper[1:41,]
+  webscrapDate <- dfWebScrapper$date[1]
   dfWebScrapper<- cbind.data.frame(dfWebScrapper, country)
   dfWebScrapper <- dfWebScrapper %>% select(country, title)
   world <- map_data("world")
@@ -402,7 +404,7 @@ top1weeklyWorld <- function(dfWebScrapper){
     {
       plt <- ggplot(combined, aes(x = long, y = lat, group = group, fill = title)) +
         geom_polygon() +
-        ggtitle(paste("The most viewed videos per country of the category WEEK on the", dfWebScrapper$date[1])) +
+        ggtitle(paste("The most viewed videos per country of the category WEEK on the", webscrapDate)) +
         theme(
           axis.title.x = element_blank(),
           axis.text.x = element_blank(),
@@ -434,6 +436,7 @@ top1monthlyWorld <- function(dfWebScrapper){
   #Visualizsation of scotland map with last data sets
   dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "monthly") %>% filter(countryID != "world")
   dfWebScrapper <- dfWebScrapper[1:41,]
+  webscrapDate <- dfWebScrapper$date[1]
   dfWebScrapper<- cbind.data.frame(dfWebScrapper, country)
   dfWebScrapper <- dfWebScrapper %>% select(country, title)
   world <- map_data("world")
@@ -444,7 +447,7 @@ top1monthlyWorld <- function(dfWebScrapper){
     {
       plt <- ggplot(combined, aes(x = long, y = lat, group = group, fill = title)) +
         geom_polygon() +
-        ggtitle(paste("The most viewed videos per country of the category MONTH on the", dfWebScrapper$date[1])) +
+        ggtitle(paste("The most viewed videos per country of the category MONTH on the", webscrapDate)) +
         theme(
           axis.title.x = element_blank(),
           axis.text.x = element_blank(),
@@ -476,6 +479,7 @@ top1yearWorld <- function(dfWebScrapper){
   #Visualizsation of scotland map with last data sets
   dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "yearly") %>% filter(countryID != "world")
   dfWebScrapper <- dfWebScrapper[1:41,]
+  webscrapDate <- dfWebScrapper$date[1]
   dfWebScrapper<- cbind.data.frame(dfWebScrapper, country)
   dfWebScrapper <- dfWebScrapper %>% select(country, title)
   world <- map_data("world")
@@ -506,7 +510,7 @@ top1yearWorld <- function(dfWebScrapper){
     {
       plt <- ggplot(combined, aes(x = long, y = lat, group = group, fill = title)) +
         geom_polygon() +
-        ggtitle(paste("The most viewed videos per country of the category Year on the", dfWebScrapper$date[1])) +
+        ggtitle(paste("The most viewed videos per country of the category Year on the", webscrapDate)) +
         theme(
           axis.title.x = element_blank(),
           axis.text.x = element_blank(),
@@ -526,6 +530,77 @@ top1yearWorld <- function(dfWebScrapper){
       #scale_fill_manual(values = title ) +
       ggsave(
         filename = file.path("/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main", "yearlyWorldMap.jpeg"),
+        plot = plt,
+        width = 1000,
+        height = 500,
+        units = "px",
+        scale = 5
+      )
+    },
+    error=function(error_message) {
+      
+      return(NA)
+    }
+  )
+}
+top1AllTimeWorld <- function(dfWebScrapper){
+  
+  country <- c("USA","Ukraine","UK","Switzerland","Sweden","Spain","Slovakia","Serbia","Russia","Romania","Portugal","Poland","Pakistan","Norway", "New Zealand","Netherlands","Morocco","Mexico","South Korea","Japan","Italy","Israel","Ireland","India","Hungary","Greece","Germany","France","Finland","Egypt","Denmark","Czech Republic","Croatia","Chile","Canada","Bulgaria","Brazil","Belgium","Austria","Australia","Argentina")
+  
+  #Visualizsation of scotland map with last data sets
+  dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "allTime") %>% filter(countryID != "world")
+  dfWebScrapper <- dfWebScrapper[1:41,]
+  webscrapDate <- dfWebScrapper$date[1]
+  dfWebScrapper<- cbind.data.frame(dfWebScrapper, country)
+  dfWebScrapper <- dfWebScrapper %>% select(country, title)
+  world <- map_data("world")
+  combined <- left_join(world, dfWebScrapper, by = c("region" = "country"))
+  title_fill <- geom_polygon(aes(fill = title))
+  dfWebScrapper <- arrange(dfWebScrapper, date)
+  for(i in 1:length(dfWebScrapper$title)){
+    original_title <- dfWebScrapper$title
+    
+    # Set the maximum number of characters per line
+    max_chars_per_line <- 20
+    
+    # Wrap the title to a specified width
+    wrapped_title <- strwrap(original_title, width = max_chars_per_line, simplify = FALSE)
+    
+    # If the title is longer than the specified width, join the lines with "\n"
+    if (length(wrapped_title) > 1) {
+      new_title <- paste(wrapped_title, collapse = "\n")
+    } else {
+      new_title <- original_title
+    }
+    
+    # Print the original and new titles
+    cat("Original Title:\n", original_title, "\n\n")
+    cat("New Title:\n", new_title, "\n")
+  }
+  tryCatch(
+    {
+      plt <- ggplot(combined, aes(x = long, y = lat, group = group, fill = title)) +
+        geom_polygon() +
+        ggtitle(paste("The most viewed videos per country of the category ALL TIME on the", webscrapDate)) +
+        theme(
+          axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          legend.box = "vertical",
+          plot.margin = margin(0.1, 0.1, 0.1, 0.1, "cm"))
+      
+      #theme(legend.key.size = unit(0.5, 'cm'), #change legend key size
+      #     legend.key.height = unit(0.5, 'cm'), #change legend key height
+      #    legend.key.width = unit(0.3, 'cm'), #change legend key width
+      #   legend.title = element_text(size=14), #change legend title font size
+      #  legend. = element_text(size=8)) #change legend text font size
+      
+      #scale_fill_manual(values = title ) +
+      ggsave(
+        filename = file.path("/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main", "allTimeWorldMap.jpeg"),
         plot = plt,
         width = 1000,
         height = 500,
@@ -619,6 +694,7 @@ Visualisation <-function() {
   top1TodayWorld(dfWebScrapper)
   top1monthlyWorld(dfWebScrapper)
   top1yearWorld(dfWebScrapper)
+  top1AllTimeWorld(dfWebScrapper)
   tryCatch({
   for (i in 1:length(countryID)){
     if(countryID[i] %in% c("ma", "aeg")){
