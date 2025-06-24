@@ -1,9 +1,11 @@
 #Need to follow the following video so that everything works
 #https://www.youtube.com/watch?v=GnpJujF9dBw
 #common error go into the java folder and remove the error file
+#rm(list = ls()) for removing all global variables
 remDr <- ""
 n <- 10
 AM_PM = ""
+currentDate = Sys.Date()
 LoadingPH <- function(){
   print("Executing Webscrapper")
 # Loading packages
@@ -14,9 +16,10 @@ LoadingPH <- function(){
   library(rvest)
   library(openxlsx)
   library(readxl)
-  
+  library(lubridate)
+
   #loading selium and preparing servers dfWebSCrapper[[1,2]]
-  selenium()
+  selenium(phantomver = NULL)
   selenium_objext <- selenium(retcommand = T, check = F)
   #checking newest version of chrome
   binman::list_versions("chromedriver")
@@ -24,7 +27,7 @@ LoadingPH <- function(){
   rD <- rsDriver(browser="firefox",
                  chromever = NULL,
                  verbose =  F,
-                 port = free_port())
+                 port = free_port(), phantomver = NULL)
   #remDr <- rD[["client"]]
   assign("remDr", rD[["client"]], envir = .GlobalEnv)
    
@@ -54,14 +57,17 @@ LoadingPH <- function(){
   #List of country ID   
   countryID <- c("ar","au","at","be","br","bg","ca","cl","hr","cz","dk","eg","fi","fr","de","gr","hu","in","ie","il","it","jp","kr","mx","ma","nl","nz","no","pk","pl","pt","ro","ru","rs","sk","es","se","ch","gb","ua","us","world")
   #if doing test runs then true if not false
-  testRun <- FALSE
-  date = "01"
+  testRun <- TRUE
+  date = mday(Sys.Date())
+  j <- runif(n=1, min=25, max=45)
   #loop that reads in the data
   for (i in 1:length(countryID)){
     ID <- countryID[i]
-    #rnd bewtween 30s and 60s so we don't spam full the server of PH
     
+    #rnd bewtween 30s and 60s so we don't spam full the server of PH
+    j <- runif(n=1, min=25, max=45)
     Sys.sleep(j)
+   
     ReadingCountryToday(ID) # Reading most viewed today of country
     ReadingCountryWeekly(ID) #Reading most viewed this week of country
     date <- substr(x = Sys.Date(), start = 10, stop = 10) #getting today's date
@@ -73,18 +79,17 @@ LoadingPH <- function(){
       #reading most viewed of the country on Yearly on every Sunday
       ReadingCountryYearly(ID)
     }
-    if (TRUE  | substr(x = Sys.Date(), start = 9, stop = 10) == "01"){
+    if (testRun  | substr(x = Sys.Date(), start = 9, stop = 10) == "01"){
       #reading country most viewed of all time at the beginning of the month 
       ReadingCountryAllTime(ID)
     }
     print(paste("Loop number", i, "done"))
-    j <- runif(n=1, min=25, max=45)
+    
   }
   #closing the server
   
   
-  remDr$close()
-  rD[["server"]]$stop()
+ 
   
   #Back up
   
@@ -92,28 +97,40 @@ LoadingPH <- function(){
   data <- read_excel("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/phwMaindt.xlsx")#C:\Users\nikla\OneDrive\Desktop\PHW\PWS\PWS\data\phwMaindt.xlsx
   write.xlsx(data, paste("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/DailyBackUp/backup",Sys.Date(),AM_PM,".xlsx",sep = ""))
   
+  
+  remDr$close()
+  rD[["server"]]$stop()
 }
 Readinghtml <- function(mostviewed, ID, updated_page_source){
-  dfWebScrapper <- data.frame(date=c(rep.int(Sys.Date(), 30)), title = "NA", views = "NA",likeRatio = "NA", duration = "NA", URL = "NA",featuredOn = "NA", countryID = "NA", mostViewed="NA", position=-1, MorningOrEvening = AM_PM)
+  
+  dfWebScrapper <- data.frame(date=c(rep.int(currentDate, 30)), title = "NA", views = "NA",likeRatio = "NA", duration = "NA", URL = "NA",featuredOn = "NA", countryID = "NA", mostViewed="NA", position=-1, MorningOrEvening = AM_PM)
   
   for (i in 1:30) {
-    x <- i + 1
+    x <- i
     #print(i)
     #title
     {
+      
       parsed_page <- read_html(updated_page_source)# #v439344751 > div:nth-child(1) > div:nth-child(3) > span:nth-child(1) > a:nth-child(1)
       ##v438771811 > div:nth-child(1) > div:nth-child(3) > span:nth-child(1) > a:nth-child(1)
       #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[1]/div/div[3]/span/a  html.language-en.supportsGridLayout.fluidContainer.firefox.windows.largeLayout body.logged-out div.wrapper div.container div.gridWrapper div.nf-videos div.sectionWrapper ul#videoCategory.nf-videos.videos.search-video-thumbs li#v439344751.pcVideoListItem.js-pop.videoblock.videoBox div.wrap.flexibleHeight div.thumbnail-info-wrapper.clearfix span.title a
       #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2]/div/div[3]/span/a /html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[1]/div/div[3]/span/a
-      title_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/span/a")
+      
+      
+      #                     /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[1]/div/div[3]/div[1]/span/a
+      #                     /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[17    ]/div/div[3]/div[1]/span/a
+      #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[16]/div/div[3]/div[1]/span/a
+      title_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/span/a")
       title_xpath <- gsub(" ", "", title_xpath)
       Title <- parsed_page %>%  #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2]/div/div[3]/span/a
+    
         html_elements(xpath = title_xpath) %>%
         html_text()
       Title <- gsub("  ", "", Title)
       Title <- gsub("\n", "", Title)
-      #print(Title)
+      print(Title)
       test <- identical(Title, character(0))
+      test <- FALSE
       if (test){
         title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[3]/span/a")
         title_xpath <- gsub(" ", "", title_xpath)
@@ -122,20 +139,21 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
           html_text()
         Title <- gsub("  ", "", Title)
         Title <- gsub("\n", "", Title)
-      }
+      }#Old code used in some weird cases
       dfWebScrapper[[i,2]] <- Title
     }
     #views
     {
       parsed_page <- read_html(updated_page_source)
-      title_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[2]/div/span/var")
-      title_xpath <- gsub(" ", "", title_xpath)
+      #                     /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[1]     /div/div[3]/div[2]/div/span/var
+      views_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/div[2]/div/span/var")
+      views_xpath <- gsub(" ", "", views_xpath)
       views <- parsed_page %>% 
-        html_elements(xpath = title_xpath) %>%
+        html_elements(xpath = views_xpath) %>%
         html_text()
       views <- gsub("  ", "", views)
       views <- gsub("\n", "", views)
-      #print(views)
+      print(views)
       if (test){
         title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[3]/div[2]/div/span/var")
         title_xpath <- gsub(" ", "", title_xpath)
@@ -148,38 +166,40 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
       dfWebScrapper[[i,3]] <- views
     }
     #likeRatio
+    #Code is redundant now PH doesn't show it anymore
     {
-      parsed_page <- read_html(updated_page_source) #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2]/div/div[3]/div[2]/div/div/div
-      title_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[2]/div/div/div")
-      title_xpath <- gsub(" ", "", title_xpath)
-      likeRatio <- parsed_page %>% 
-        html_elements(xpath = title_xpath) %>%
-        html_text()
-      likeRatio <- gsub("  ", "", likeRatio)
-      likeRatio <- gsub("\n", "", likeRatio)
-      #print(likeRatio)
-      if (test){
-        title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[3]/div[2]/div/div/div")
-        title_xpath <- gsub(" ", "", title_xpath)
-        likeRatio <- parsed_page %>% 
-          html_elements(xpath = title_xpath) %>%
-          html_text()
-        likeRatio <- gsub("  ", "", likeRatio)
-        likeRatio <- gsub("\n", "", likeRatio)
-      }
-      dfWebScrapper[[i,4]] <- likeRatio
+      # parsed_page <- read_html(updated_page_source) #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2]/div/div[3]/div[2]/div/div/div
+      # title_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[2]/div/div/div")
+      # title_xpath <- gsub(" ", "", title_xpath)
+      # likeRatio <- parsed_page %>% 
+      #   html_elements(xpath = title_xpath) %>%
+      #   html_text()
+      # likeRatio <- gsub("  ", "", likeRatio)
+      # likeRatio <- gsub("\n", "", likeRatio)
+      # #print(likeRatio)
+      # if (test){
+      #   title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[3]/div[2]/div/div/div")
+      #   title_xpath <- gsub(" ", "", title_xpath)
+      #   likeRatio <- parsed_page %>% 
+      #     html_elements(xpath = title_xpath) %>%
+      #     html_text()
+      #   likeRatio <- gsub("  ", "", likeRatio)
+      #   likeRatio <- gsub("\n", "", likeRatio)
+      # }
+      dfWebScrapper[[i,4]] <- "NA"
     }
     #duration
     {
       parsed_page <- read_html(updated_page_source) #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2]/div/div[1]/a/div/var
-      title_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[1]/a/div/var")
-      title_xpath <- gsub(" ", "", title_xpath)
+      #                     /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[1]      /div/div[1]/a/div/var
+      dur_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[1]/a/div/var")
+      dur_xpath <- gsub(" ", "", dur_xpath)
       duration <- parsed_page %>% 
-        html_elements(xpath = title_xpath) %>%
+        html_elements(xpath = dur_xpath) %>%
         html_text()
       duration <- gsub("  ", "", duration)
       duration <- gsub("\n", "", duration)
-      #print(duration)
+      print(duration)
       if (test){
         title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[1]/a/div/var")
         title_xpath <- gsub(" ", "", title_xpath)
@@ -194,15 +214,16 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
     #URL
     {
       parsed_page <- read_html(updated_page_source) #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2
-      title_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/span/a")
-      title_xpath <- gsub(" ", "", title_xpath)
+      #                   /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[1]     /div/div[3]/span/a
+      url_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/span/a")
+      url_xpath <- gsub(" ", "", url_xpath)
       URL <- parsed_page %>% 
-        html_elements(xpath = title_xpath) %>%
+        html_elements(xpath = url_xpath) %>%
         html_attr('href')
       URL <- gsub("/", "https://www.pornhub.com/", URL)
       URL <- gsub(" ", "", URL)
-      #print(url)
-      if (test){
+      print(URL)
+      if (identical(Title, character(0))){
         title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[3]/span/a")
         title_xpath <- gsub(" ", "", title_xpath)
         URL <- parsed_page %>% 
@@ -214,40 +235,52 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
       dfWebScrapper[[i,6]] <- URL
     }
     #featuredOn
-    {
-      parsed_page <- read_html(updated_page_source) #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2]/div/div[3]/div[1]/div/a
-      title_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/div")
-      title_xpath <- gsub(" ", "", title_xpath)
-      featuredOn <- parsed_page %>% 
-        html_elements(xpath = title_xpath) %>%
-        html_text()
-      featuredOn <- gsub("  ", "", featuredOn)
-      featuredOn <- gsub("\n", "", featuredOn)
-      #print(featuredOn)
-      if (test){
-        title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/div")
-        title_xpath <- gsub(" ", "", title_xpath)
+    tryCatch(
+      {
+        parsed_page <- read_html(updated_page_source) #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2]/div/div[3]/div[1]/div/a
+        #                     /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[1]       /div/div[3]/div[1]/div
+        #                       /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[16]    /div/div[3]/div[1]/div[1]/div/a
+        channel_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/div[1]/div/span/a")
+        channel_xpath <- gsub(" ", "", channel_xpath)
         featuredOn <- parsed_page %>% 
-          html_elements(xpath = title_xpath) %>%
+          html_elements(xpath = channel_xpath) %>%
           html_text()
         featuredOn <- gsub("  ", "", featuredOn)
         featuredOn <- gsub("\n", "", featuredOn)
-      }
-      dfWebScrapper[[i,7]] <- featuredOn
-    }
+        print(featuredOn)
+        if (identical(featuredOn, character(0))){
+          #                       /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[16    ]/div/div[3]/div[1]/div[1]/div/a
+          channel_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/div[1]/div/a")
+          channel_xpath <- gsub(" ", "", channel_xpath)
+          featuredOn <- parsed_page %>% 
+            html_elements(xpath = channel_xpath) %>%
+            html_text()
+          featuredOn <- gsub("  ", "", featuredOn)
+          featuredOn <- gsub("\n", "", featuredOn)
+        }
+        dfWebScrapper[[i,7]] <- featuredOn
+      },
+      dfWebScrapper[[i,7]] <- "NA"
+        return(NA)
+      
+    )
+
     #countryID, mostViewed and position
     {
+      print(i)
       dfWebScrapper[[i,8]] <- ID
-      dfWebScrapper[[i,9]] <- mostviewed
+      #dfWebScrapper[[i,9]] <- mostviewed
       dfWebScrapper[[i,10]] <- i
       dfWebScrapper[[i,11]] <- AM_PM
     }
   }
-  #print(dfWebScrapper)
+  print("Done")
+  print(dfWebScrapper)
   WritingToExcel(dfWebScrapper)
 }
 ReadingCountryToday <- function(ID){
   #text to tell what is happening
+  ID <- "ar"
   print(paste("starting country with", ID, "as ID for today"))
   
   #navigating to the website
@@ -258,6 +291,7 @@ ReadingCountryToday <- function(ID){
   #Storing the Html of the website
   updated_page_source <- remDr$getPageSource()[[1]] 
   #Reading the data
+  
   Readinghtml("today", ID, updated_page_source) 
   print("Today done")
 }
@@ -352,8 +386,15 @@ LIB <- function(){
   library(ggplot2)
   library(openxlsx)
   library(readxl)
+  library(tm)
+  library(tidytext)
+  library(SnowballC)
+  library(knitr)
+  library(DT)
 }
 top1TodayWorld <- function(dfWebScrapper){
+  #print(dfWebScrapper %>% filter(mostViewed == "today")%>% filter(countryID != "world"))
+  leafletMap(dfWebScrapper %>% filter(mostViewed == "today")%>% filter(countryID != "world"), "today")
   #Visualizsation of scotland map with last data sets
   dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "today") %>% filter(countryID != "world")
   dfWebScrapper <- dfWebScrapper[1:41,]
@@ -364,7 +405,8 @@ top1TodayWorld <- function(dfWebScrapper){
   dfWebScrapper <- dfWebScrapper %>% select(country, title)
   world <- map_data("world")
   combined <- left_join(world, dfWebScrapper, by = c("region" = "country"))
-  dfWebScrapper <- arrange(dfWebScrapper, date)
+  dfWebScrapper <- arrange(dfWebScrapper, dfWebScrapper$date)
+  print("We get here")
   tryCatch(
     {
     plt <- ggplot(combined, aes(x = long, y = lat, group = group)) +
@@ -376,6 +418,7 @@ top1TodayWorld <- function(dfWebScrapper){
             axis.title.y=element_blank(),
             axis.text.y=element_blank(),
             axis.ticks.y=element_blank())
+     # guides(color = guide_legend(override.aes = list(size = 21*10))) #lenght(title)
        ggsave(filename = file.path("/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main","dailyWorldMap.jpeg"),
               plot = plt,
               width = 1000,
@@ -388,7 +431,7 @@ top1TodayWorld <- function(dfWebScrapper){
 }
 top1weeklyWorld <- function(dfWebScrapper){
   country <- c("USA","Ukraine","UK","Switzerland","Sweden","Spain","Slovakia","Serbia","Russia","Romania","Portugal","Poland","Pakistan","Norway", "New Zealand","Netherlands","Morocco","Mexico","South Korea","Japan","Italy","Israel","Ireland","India","Hungary","Greece","Germany","France","Finland","Egypt","Denmark","Czech Republic","Croatia","Chile","Canada","Bulgaria","Brazil","Belgium","Austria","Australia","Argentina")
-  
+  leafletMap(dfWebScrapper %>% filter(mostViewed == "weekly")%>% filter(countryID != "world"), "weekly")
   #Visualizsation of scotland map with last data sets
   dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "weekly") %>% filter(countryID != "world")
   dfWebScrapper <- dfWebScrapper[1:41,]
@@ -399,7 +442,7 @@ top1weeklyWorld <- function(dfWebScrapper){
   #world %>% filter(region != "Antarctica") 
   combined <- left_join(world, dfWebScrapper, by = c("region" = "country"))
   title_fill <- geom_polygon(aes(fill = title))
-  dfWebScrapper <- arrange(dfWebScrapper, date)
+  dfWebScrapper <- arrange(dfWebScrapper, dfWebScrapper$date)
   tryCatch(
     {
       plt <- ggplot(combined, aes(x = long, y = lat, group = group, fill = title)) +
@@ -432,7 +475,7 @@ top1weeklyWorld <- function(dfWebScrapper){
 top1monthlyWorld <- function(dfWebScrapper){
   
   country <- c("USA","Ukraine","UK","Switzerland","Sweden","Spain","Slovakia","Serbia","Russia","Romania","Portugal","Poland","Pakistan","Norway", "New Zealand","Netherlands","Morocco","Mexico","South Korea","Japan","Italy","Israel","Ireland","India","Hungary","Greece","Germany","France","Finland","Egypt","Denmark","Czech Republic","Croatia","Chile","Canada","Bulgaria","Brazil","Belgium","Austria","Australia","Argentina")
-  
+  leafletMap(dfWebScrapper %>% filter(mostViewed == "monthly")%>% filter(countryID != "world"), "monthly")
   #Visualizsation of scotland map with last data sets
   dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "monthly") %>% filter(countryID != "world")
   dfWebScrapper <- dfWebScrapper[1:41,]
@@ -442,7 +485,7 @@ top1monthlyWorld <- function(dfWebScrapper){
   world <- map_data("world")
   combined <- left_join(world, dfWebScrapper, by = c("region" = "country"))
   title_fill <- geom_polygon(aes(fill = title))
-  dfWebScrapper <- arrange(dfWebScrapper, date)
+  dfWebScrapper <- arrange(dfWebScrapper, dfWebScrapper$date)
   tryCatch(
     {
       plt <- ggplot(combined, aes(x = long, y = lat, group = group, fill = title)) +
@@ -475,7 +518,7 @@ top1monthlyWorld <- function(dfWebScrapper){
 top1yearWorld <- function(dfWebScrapper){
   
   country <- c("USA","Ukraine","UK","Switzerland","Sweden","Spain","Slovakia","Serbia","Russia","Romania","Portugal","Poland","Pakistan","Norway", "New Zealand","Netherlands","Morocco","Mexico","South Korea","Japan","Italy","Israel","Ireland","India","Hungary","Greece","Germany","France","Finland","Egypt","Denmark","Czech Republic","Croatia","Chile","Canada","Bulgaria","Brazil","Belgium","Austria","Australia","Argentina")
-  
+  leafletMap(dfWebScrapper %>% filter(mostViewed == "yearly")%>% filter(countryID != "world"), "yearly")
   #Visualizsation of scotland map with last data sets
   dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "yearly") %>% filter(countryID != "world")
   dfWebScrapper <- dfWebScrapper[1:41,]
@@ -485,7 +528,7 @@ top1yearWorld <- function(dfWebScrapper){
   world <- map_data("world")
   combined <- left_join(world, dfWebScrapper, by = c("region" = "country"))
   title_fill <- geom_polygon(aes(fill = title))
-  dfWebScrapper <- arrange(dfWebScrapper, date)
+  dfWebScrapper <- arrange(dfWebScrapper, dfWebScrapper$date)
   for(i in 1:length(dfWebScrapper$title)){
     original_title <- dfWebScrapper$title
     
@@ -546,7 +589,7 @@ top1yearWorld <- function(dfWebScrapper){
 top1AllTimeWorld <- function(dfWebScrapper){
   
   country <- c("USA","Ukraine","UK","Switzerland","Sweden","Spain","Slovakia","Serbia","Russia","Romania","Portugal","Poland","Pakistan","Norway", "New Zealand","Netherlands","Morocco","Mexico","South Korea","Japan","Italy","Israel","Ireland","India","Hungary","Greece","Germany","France","Finland","Egypt","Denmark","Czech Republic","Croatia","Chile","Canada","Bulgaria","Brazil","Belgium","Austria","Australia","Argentina")
-  
+  leafletMap(dfWebScrapper %>% filter(mostViewed == "allTime")%>% filter(countryID != "world"), "allTime")
   #Visualizsation of scotland map with last data sets
   dfWebScrapper <- dfWebScrapper %>% filter(position == 1) %>% filter(mostViewed == "allTime") %>% filter(countryID != "world")
   dfWebScrapper <- dfWebScrapper[1:41,]
@@ -556,7 +599,7 @@ top1AllTimeWorld <- function(dfWebScrapper){
   world <- map_data("world")
   combined <- left_join(world, dfWebScrapper, by = c("region" = "country"))
   title_fill <- geom_polygon(aes(fill = title))
-  dfWebScrapper <- arrange(dfWebScrapper, date)
+  dfWebScrapper <- arrange(dfWebScrapper, dfWebScrapper$date)
   for(i in 1:length(dfWebScrapper$title)){
     original_title <- dfWebScrapper$title
     
@@ -614,6 +657,61 @@ top1AllTimeWorld <- function(dfWebScrapper){
     }
   )
 }
+leafletMap <- function(dfWebScrapper, ID){
+  library(tidyverse) #library to make programme run
+  library(sf)
+  library(leaflet)
+  library(htmlwidgets)
+  library(RColorBrewer)
+  library(htmltools)
+  library(formattable)
+  library(readxl)
+  library(ggplot2)
+  library(ggpubr)
+  library(viridis)
+  library(SnowballC)
+  number1 <- dfWebScrapper %>% filter(position  == 1)
+  map <- st_read("C:/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/CountryBoundaries/world_data_country_level_cartographic_boundaries.shp")
+  number1 <- number1[1:41,]
+  country <- c("United States of America","Ukraine","United Kingdom","Switzerland","Sweden","Spain","Slovakia","Serbia","Russia","Romania","Portugal","Poland","Pakistan","Norway", "New Zealand","Netherlands","Morocco","Mexico","South Korea","Japan","Italy","Israel","Ireland","India","Hungary","Greece","Germany","France","Finland","Egypt","Denmark","Czechia","Croatia","Chile","Canada","Bulgaria","Brazil","Belgium","Austria","Australia","Argentina")
+  number1<- cbind.data.frame(number1, country)
+  number1 <- number1 %>% select(country, title)
+  # number2 <- dfWebScrapper %>% filter(position  == 2)
+  # number2 <- number2[1:41,2]
+  # number3 <- dfWebScrapper %>% filter(position  == 2)
+  # number3 <- number3[1:41,2]
+  combined <- left_join(map, number1, by = c("name" = "country")) #bind_cols(number1, number2, number3)
+  combined <- na.omit(combined)
+  print("Starting leaflet")
+  unique_titles <- unique(number1$title)
+  
+  # Create a custom palette with brighter colors
+  bright_palette <- viridis_pal(option = "D", direction = 1)(length(unique_titles))
+  
+  # Create a color factor with the custom palette
+  pal_bright <- colorFactor(palette = bright_palette, domain = unique_titles)
+  m <- leaflet(combined) %>%
+    addTiles() %>%
+    addProviderTiles("CartoDB") %>%
+    addPolygons(
+      weight = 1,
+      label = ~(paste0("1: ", title)),
+      fillColor = ~pal_bright(title),
+      highlight = highlightOptions(weight = 5, color = "white", bringToFront = TRUE)) %>%
+    fitBounds(
+      lng1 = min(-90),
+      lat1 = min(-180),
+      lng2 = max(90),
+      lat2 = max(180)
+    ) %>%
+    setMaxBounds( lng1 = 180
+                  , lat1 = 180
+                  , lng2 = -180
+                  , lat2 =  -180)
+  # dir.create(widget_path)
+  tempStore = paste("/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main/leaflet/",ID,"-leaflet.html",sep = "")
+  saveWidget(m, file.path(tempStore), selfcontained=FALSE)
+}
 Top5PerCountryLastDays <- function(WhatCountry,dfWebScrapper){
   
 
@@ -646,16 +744,16 @@ Top5PerCountryLastYear <- function(WhatCountry,dfWebScrapper){
   Top5GeomLinePlot(dfWebScrapper, WhatCountry, "Year")
 }
 Top5GeomLinePlot <- function(dfWebScrapper, WhatCountry,type){
-  len = 40
+  len = 25
   dfWebScrapper <- dfWebScrapper%>% slice(1:len)
-  for(i in 1:len){
-    if(!is.na(dfWebScrapper[i, 11]) &&dfWebScrapper[i,11] == "AM"){
-      dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 1, stop = 10), " AM")
-      
-    } else if (!is.na(dfWebScrapper[i, 11]) &&dfWebScrapper[i,11] == "PM"){
-      dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 1, stop = 10), " PM")
-    }
-  }
+  #for(i in 1:len){
+    #if(!is.na(dfWebScrapper[i, 11]) &&dfWebScrapper[i,11] == "AM"){
+    #  dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 1, stop = 10), " AM")
+    #  
+    #} else if (!is.na(dfWebScrapper[i, 11]) &&dfWebScrapper[i,11] == "PM"){
+    #  dfWebScrapper[i,1] = paste(substr(x = dfWebScrapper[i,1], start = 1, stop = 10), " PM")
+    #}
+  #}
   dfWebScrapper <- arrange(dfWebScrapper, date)
   #dfWebScrapper <- dfWebScrapper[order(dfWebScrapper$date, decreasing = FALSE), ]
   if(type == "Days"){
@@ -684,21 +782,60 @@ Top5GeomLinePlot <- function(dfWebScrapper, WhatCountry,type){
     cat("THIS IS THE BIG ERROR:", conditionMessage(e), "\n")
     Sys.sleep(60)})
 }
+NLP <- function(dfWebScrapper, WhatCountry, type){
+  todayDt <-dfWebScrapper %>% filter(mostViewed  == type) %>% filter(countryID  == WhatCountry)
+  todayDt <-todayDt %>% filter(date == todayDt$date[1])
+  title_tokens <- todayDt  %>% 
+    unnest_tokens(output = "sentences", input = title, token = "sentences")
+  
+  word <- title_tokens %>%
+    unnest_tokens(word, token = "words", input = sentences) %>%
+    select(word)
+  
+  word %>%
+    count(word, sort = TRUE)
+  
+  word <- word %>%
+    count(word, sort = TRUE)%>%
+    anti_join(stop_words)
+  
+  
+  graph <- ggplot(word[1:10,], aes(x = reorder(word, -n), y = n)) +        # Create barchart with ggplot2
+    geom_bar(stat = "identity") + labs(x = "Words", y = "Frequency", title = paste("Top 10 words by Frequency for",WhatCountry,"on the",todayDt$date[1],sep = " "))
+  
+  tempStore = paste(WhatCountry,"-NLPTop10",type,".jpeg",sep = "")
+  ggsave(filename = file.path('/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main/daily/',tempStore),
+         plot = graph,
+         width = 1000,
+         height = 500, units = "px", scale = 5)
+}
+DataTable  <- function(dfWebScrapper, WhatCountry, type){
+  todayDt <-dfWebScrapper %>% filter(mostViewed  == type) %>% filter(countryID  == WhatCountry)
+  todayDt <-todayDt %>% filter(date == todayDt$date[1])
+  
+
+  
+ 
+  datatable_object <- DT::datatable(todayDt)
+  tempStore = paste(WhatCountry,"-dataTable",type,".html",sep = "")
+  # Save the DataTable as an HTML file
+  saveWidget(datatable_object, file.path('/Users/nikla/OneDrive/Desktop/PHWW-main/PHWW-main/static/images/main/DataTable/',tempStore))
+}
 Visualisation <-function() {
   LIB() #
   PHWdt <- read_excel("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/phwMaindt.xlsx")
   PHWdt[1] <- sapply(PHWdt[1], as.character)
   dfWebScrapper <- data.frame(PHWdt)
   countryID <- c("ar","au","at","be","br","bg","ca","cl","hr","cz","dk","eg","fi","fr","de","gr","hu","in","ie","il","it","jp","kr","mx","ma","nl","nz","no","pk","pl","pt","ro","ru","rs","sk","es","se","ch","gb","ua","us","world")
-  top1weeklyWorld(dfWebScrapper)
   top1TodayWorld(dfWebScrapper)
+  top1weeklyWorld(dfWebScrapper)
   top1monthlyWorld(dfWebScrapper)
   top1yearWorld(dfWebScrapper)
   top1AllTimeWorld(dfWebScrapper)
   tryCatch({
   for (i in 1:length(countryID)){
-    if(countryID[i] %in% c("ma", "aeg")){
-     
+    if(countryID[i] %in% c("maa", "aeg")){
+
     }
     else{
       print(paste("Today", countryID[i]))
@@ -708,13 +845,25 @@ Visualisation <-function() {
       Top5PerCountryLastWeek(countryID[i],dfWebScrapper)
       print(paste("Year", countryID[i]))
       Top5PerCountryLastYear(countryID[i],dfWebScrapper)
+      print(paste("NLP", countryID[i]))
+      NLP(dfWebScrapper,countryID[i],"yearly")
+      NLP(dfWebScrapper,countryID[i],"monthly")
+      NLP(dfWebScrapper,countryID[i],"allTime")
+      NLP(dfWebScrapper,countryID[i],"today")
+      NLP(dfWebScrapper,countryID[i],"weekly")
+      print(paste("Database", countryID[i]))
+      DataTable(dfWebScrapper,countryID[i],"yearly")
+      DataTable(dfWebScrapper,countryID[i],"monthly")
+      DataTable(dfWebScrapper,countryID[i],"allTime")
+      DataTable(dfWebScrapper,countryID[i],"today")
+      DataTable(dfWebScrapper,countryID[i],"weekly")
   }
   }}, error = function(e){
     cat("THIS IS THE BIG ERROR:", conditionMessage(e), "\n")
     Sys.sleep(60)
   }
   )
-  
+
 }
 #infinity run
 while (TRUE){
@@ -722,16 +871,11 @@ while (TRUE){
   if (x == "08:30"){
     AM_PM = "AM"
     LoadingPH()
-    Visualisation()
-    print(Sys.time())
-  }
-  else if (x == "20:30"){
-    AM_PM = "PM"
-    LoadingPH()
-    Visualisation()
+    visualisation()
     print(Sys.time())
   }
 }
+
 
 resetData <-function(){
   library(RSelenium)
