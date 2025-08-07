@@ -5,6 +5,7 @@
 remDr <- ""
 n <- 10
 AM_PM = ""
+html_reading_n_err = 0
 currentDate = Sys.Date()
 LoadingPH <- function(){
   print("Executing Webscrapper")
@@ -17,7 +18,7 @@ LoadingPH <- function(){
   library(openxlsx)
   library(readxl)
   library(lubridate)
-
+  html_reading_n_err = 0
   #loading selium and preparing servers dfWebSCrapper[[1,2]]
   selenium(phantomver = NULL)
   selenium_objext <- selenium(retcommand = T, check = F)
@@ -43,21 +44,25 @@ LoadingPH <- function(){
       button_element$clickElement()
     },
     error=function(error_message) {
-      
-      button_element <- remDr$findElement(using = "xpath","/html/body/div[4]/div/div/button")
+      #/html/body/div[5]/div/div/button
+      button_element <- remDr$findElement(using = "xpath","/html/body/div[5]/div/div/button")
       button_element$clickElement()
       return(NA)
     }
   )
   #accepting cookie settings
   Sys.sleep(3)
-  button_element <- remDr$findElement(using = "css",".cbSecondaryCTA")
+  
+  #html.language-en.supportsGridLayout.fluidContainer.firefox.windows.largeLayout body.logged-out div#globalCookieBanner div.globalCookieBanner div.globalCookieBanner__wrapper div.globalCookieBanner__buttons button.buttonBase.js-acceptGlobalCookies
+
+  
+  button_element <- remDr$findElement(using = "css","button.buttonBase:nth-child(2)")
   button_element$clickElement()
   
   #List of country ID   
   countryID <- c("ar","au","at","be","br","bg","ca","cl","hr","cz","dk","eg","fi","fr","de","gr","hu","in","ie","il","it","jp","kr","mx","ma","nl","nz","no","pk","pl","pt","ro","ru","rs","sk","es","se","ch","gb","ua","us","world")
   #if doing test runs then true if not false
-  testRun <- TRUE
+  testRun <- FALSE
   date = mday(Sys.Date())
   j <- runif(n=1, min=25, max=45)
   #loop that reads in the data
@@ -86,7 +91,7 @@ LoadingPH <- function(){
     print(paste("Loop number", i, "done"))
     
   }
-  #closing the server
+  
   
   
  
@@ -97,32 +102,32 @@ LoadingPH <- function(){
   data <- read_excel("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/phwMaindt.xlsx")#C:\Users\nikla\OneDrive\Desktop\PHW\PWS\PWS\data\phwMaindt.xlsx
   write.xlsx(data, paste("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/DailyBackUp/backup",Sys.Date(),AM_PM,".xlsx",sep = ""))
   
-  
+  #closing the server
   remDr$close()
   rD[["server"]]$stop()
+  
+  
+  if(html_reading_n_err > 9){
+    print("CHECK THE CODE A LOT OF READING ERRORS HAPPENED!!!!")
+  }
 }
 Readinghtml <- function(mostviewed, ID, updated_page_source){
   
   dfWebScrapper <- data.frame(date=c(rep.int(currentDate, 30)), title = "NA", views = "NA",likeRatio = "NA", duration = "NA", URL = "NA",featuredOn = "NA", countryID = "NA", mostViewed="NA", position=-1, MorningOrEvening = AM_PM)
-  
   for (i in 1:30) {
     x <- i
     #print(i)
     #title
-    {
+    tryCatch({
       
-      parsed_page <- read_html(updated_page_source)# #v439344751 > div:nth-child(1) > div:nth-child(3) > span:nth-child(1) > a:nth-child(1)
-      ##v438771811 > div:nth-child(1) > div:nth-child(3) > span:nth-child(1) > a:nth-child(1)
-      #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[1]/div/div[3]/span/a  html.language-en.supportsGridLayout.fluidContainer.firefox.windows.largeLayout body.logged-out div.wrapper div.container div.gridWrapper div.nf-videos div.sectionWrapper ul#videoCategory.nf-videos.videos.search-video-thumbs li#v439344751.pcVideoListItem.js-pop.videoblock.videoBox div.wrap.flexibleHeight div.thumbnail-info-wrapper.clearfix span.title a
-      #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2]/div/div[3]/span/a /html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[1]/div/div[3]/span/a
+      parsed_page <- read_html(updated_page_source)
+    
       
-      
-      #                     /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[1]/div/div[3]/div[1]/span/a
-      #                     /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[17    ]/div/div[3]/div[1]/span/a
-      #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[16]/div/div[3]/div[1]/span/a
-      title_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/span/a")
+      #The newest version of the XPath
+      #                     /html/body/div[5]/div[2]/div[5]/div/div[1]/ul/li[1     ]/div/div[3]/div[1]/span
+      title_xpath <- paste("/html/body/div[5]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/span/a")
       title_xpath <- gsub(" ", "", title_xpath)
-      Title <- parsed_page %>%  #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2]/div/div[3]/span/a
+      Title <- parsed_page %>%  
     
         html_elements(xpath = title_xpath) %>%
         html_text()
@@ -132,7 +137,7 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
       test <- identical(Title, character(0))
       test <- FALSE
       if (test){
-        title_xpath <- paste("/html/body/div[4]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[3]/span/a")
+        title_xpath <- paste("/html/body/div[5]/div[2]/div[4]/div/div[1]/ul/li[", x,"]/div/div[3]/span/a")
         title_xpath <- gsub(" ", "", title_xpath)
         Title <- parsed_page %>% 
           html_elements(xpath = title_xpath) %>%
@@ -142,11 +147,16 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
       }#Old code used in some weird cases
       dfWebScrapper[[i,2]] <- Title
     }
+    ,error=function(error_message) {
+    dfWebScrapper[[i,2]] <- "NA"
+    html_reading_n_err <- html_reading_n_err + 1
+    return(NA)
+  })
     #views
-    {
+    tryCatch({
       parsed_page <- read_html(updated_page_source)
       #                     /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[1]     /div/div[3]/div[2]/div/span/var
-      views_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/div[2]/div/span/var")
+      views_xpath <- paste("/html/body/div[5]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/div[2]/div/span/var")
       views_xpath <- gsub(" ", "", views_xpath)
       views <- parsed_page %>% 
         html_elements(xpath = views_xpath) %>%
@@ -164,9 +174,13 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
         views <- gsub("\n", "", views)
       }
       dfWebScrapper[[i,3]] <- views
-    }
+    } ,error=function(error_message) {
+      dfWebScrapper[[i,3]] <- "NA"
+      html_reading_n_err <- html_reading_n_err + 1
+      return(NA)
+    })
     #likeRatio
-    #Code is redundant now PH doesn't show it anymore
+    #Code is redundant now PH has removed it
     {
       # parsed_page <- read_html(updated_page_source) #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2]/div/div[3]/div[2]/div/div/div
       # title_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[2]/div/div/div")
@@ -186,13 +200,13 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
       #   likeRatio <- gsub("  ", "", likeRatio)
       #   likeRatio <- gsub("\n", "", likeRatio)
       # }
-      dfWebScrapper[[i,4]] <- "NA"
+      dfWebScrapper[[i,4]] <- "NA" #Kepping this for data consistency
     }
     #duration
-    {
+    tryCatch({
       parsed_page <- read_html(updated_page_source) #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2]/div/div[1]/a/div/var
       #                     /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[1]      /div/div[1]/a/div/var
-      dur_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[1]/a/div/var")
+      dur_xpath <- paste("/html/body/div[5]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[1]/a/div/var")
       dur_xpath <- gsub(" ", "", dur_xpath)
       duration <- parsed_page %>% 
         html_elements(xpath = dur_xpath) %>%
@@ -210,12 +224,16 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
         duration <- gsub("\n", "", duration)
       }
       dfWebScrapper[[i,5]] <- duration
-    }
+    } ,error=function(error_message) {
+      dfWebScrapper[[i,5]] <- "NA"
+      html_reading_n_err <- html_reading_n_err + 1
+      return(NA)
+    })
     #URL
-    {
+    tryCatch({
       parsed_page <- read_html(updated_page_source) #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2
       #                   /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[1]     /div/div[3]/span/a
-      url_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/span/a")
+      url_xpath <- paste("/html/body/div[5]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/span/a")
       url_xpath <- gsub(" ", "", url_xpath)
       URL <- parsed_page %>% 
         html_elements(xpath = url_xpath) %>%
@@ -233,14 +251,16 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
         URL <- gsub(" ", "", URL)
       }
       dfWebScrapper[[i,6]] <- URL
-    }
+    } ,error=function(error_message) {
+      dfWebScrapper[[i,6]] <- "NA"
+      html_reading_n_err <- html_reading_n_err + 1
+      return(NA)
+    })
     #featuredOn
     tryCatch(
       {
-        parsed_page <- read_html(updated_page_source) #/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[2]/div/div[3]/div[1]/div/a
-        #                     /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[1]       /div/div[3]/div[1]/div
-        #                       /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[16]    /div/div[3]/div[1]/div[1]/div/a
-        channel_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/div[1]/div/span/a")
+        parsed_page <- read_html(updated_page_source) 
+        channel_xpath <- paste("/html/body/div[5]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/div[1]/div/span/a")
         channel_xpath <- gsub(" ", "", channel_xpath)
         featuredOn <- parsed_page %>% 
           html_elements(xpath = channel_xpath) %>%
@@ -249,8 +269,7 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
         featuredOn <- gsub("\n", "", featuredOn)
         print(featuredOn)
         if (identical(featuredOn, character(0))){
-          #                       /html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[16    ]/div/div[3]/div[1]/div[1]/div/a
-          channel_xpath <- paste("/html/body/div[4]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/div[1]/div/a")
+          channel_xpath <- paste("/html/body/div[5]/div[2]/div[5]/div/div[1]/ul/li[", x,"]/div/div[3]/div[1]/div[1]/div/a")
           channel_xpath <- gsub(" ", "", channel_xpath)
           featuredOn <- parsed_page %>% 
             html_elements(xpath = channel_xpath) %>%
@@ -259,17 +278,18 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
           featuredOn <- gsub("\n", "", featuredOn)
         }
         dfWebScrapper[[i,7]] <- featuredOn
-      },
-      dfWebScrapper[[i,7]] <- "NA"
+      },error=function(error_message) {
+        dfWebScrapper[[i,7]] <- "NA"
+        html_reading_n_err <- html_reading_n_err + 1
         return(NA)
-      
+      }
     )
 
     #countryID, mostViewed and position
     {
       print(i)
       dfWebScrapper[[i,8]] <- ID
-      #dfWebScrapper[[i,9]] <- mostviewed
+      dfWebScrapper[[i,9]] <- mostviewed
       dfWebScrapper[[i,10]] <- i
       dfWebScrapper[[i,11]] <- AM_PM
     }
@@ -280,7 +300,7 @@ Readinghtml <- function(mostviewed, ID, updated_page_source){
 }
 ReadingCountryToday <- function(ID){
   #text to tell what is happening
-  ID <- "ar"
+  #ID <- "ar"
   print(paste("starting country with", ID, "as ID for today"))
   
   #navigating to the website
@@ -406,7 +426,7 @@ top1TodayWorld <- function(dfWebScrapper){
   world <- map_data("world")
   combined <- left_join(world, dfWebScrapper, by = c("region" = "country"))
   dfWebScrapper <- arrange(dfWebScrapper, dfWebScrapper$date)
-  print("We get here")
+  #print("We get here")
   tryCatch(
     {
     plt <- ggplot(combined, aes(x = long, y = lat, group = group)) +
@@ -823,7 +843,7 @@ DataTable  <- function(dfWebScrapper, WhatCountry, type){
 }
 Visualisation <-function() {
   LIB() #
-  PHWdt <- read_excel("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/phwMaindt.xlsx")
+  PHWdt <- read_excel("/Users/nikla/OneDrive/Desktop/PHW/PWS/PWS/data/phwMaindt.xlsx")#,range = "A1:J93022"
   PHWdt[1] <- sapply(PHWdt[1], as.character)
   dfWebScrapper <- data.frame(PHWdt)
   countryID <- c("ar","au","at","be","br","bg","ca","cl","hr","cz","dk","eg","fi","fr","de","gr","hu","in","ie","il","it","jp","kr","mx","ma","nl","nz","no","pk","pl","pt","ro","ru","rs","sk","es","se","ch","gb","ua","us","world")
@@ -852,15 +872,15 @@ Visualisation <-function() {
       NLP(dfWebScrapper,countryID[i],"today")
       NLP(dfWebScrapper,countryID[i],"weekly")
       print(paste("Database", countryID[i]))
-      DataTable(dfWebScrapper,countryID[i],"yearly")
-      DataTable(dfWebScrapper,countryID[i],"monthly")
-      DataTable(dfWebScrapper,countryID[i],"allTime")
-      DataTable(dfWebScrapper,countryID[i],"today")
-      DataTable(dfWebScrapper,countryID[i],"weekly")
+      #DataTable(dfWebScrapper,countryID[i],"yearly")
+      #DataTable(dfWebScrapper,countryID[i],"monthly")
+      #DataTable(dfWebScrapper,countryID[i],"allTime")
+      #DataTable(dfWebScrapper,countryID[i],"today")
+      #DataTable(dfWebScrapper,countryID[i],"weekly")
   }
   }}, error = function(e){
     cat("THIS IS THE BIG ERROR:", conditionMessage(e), "\n")
-    Sys.sleep(60)
+    Sys.sleep(3)
   }
   )
 
@@ -871,12 +891,12 @@ while (TRUE){
   if (x == "08:30"){
     AM_PM = "AM"
     LoadingPH()
-    visualisation()
+    Visualisation()
     print(Sys.time())
   }
 }
 
-
+#DO NOT RUN THIS UBLESS YOU HAVE A GOOD REASON or A BACK UP!
 resetData <-function(){
   library(RSelenium)
   library(wdman)
